@@ -85,16 +85,21 @@ static char *sensorName[NUM_SENSORS] = { "humidity",
                                          "temperature" };
 static msg_t printThread(void *arg) {
 
-  // print count every second
+  // print sensor value every 5 seconds
   while (1) {
     chThdSleepMilliseconds(5000);
     
-    // check the error in sensors
+    // check the error in sensors, signal if needed
     for (int ii = 0; ii < NUM_SENSORS; ii++) {
       if (false == *sensorStatus[ii])
+        ledOnTime = 100;
+        ledOffTime = 900;
         continue;
-    }
+      }
+    } 
     
+    // turn off signaling if sensor ok
+    ledOnTime = ledOffTime = 500;  
     // no error in sensors, begin to print out data
     Serial.print('{');
     for (int ii = 0; ii < NUM_SENSORS; ii++) {
@@ -140,7 +145,7 @@ void mainThread() {
   chThdCreateStatic(waDHTSensorThread, sizeof(waDHTSensorThread),
                           NORMALPRIO, dhtSensorThread, NULL);
 
-  // increment counter
+  // nothing to do in the main thread yet
   while (1) {
     chThdSleepMilliseconds(5000);
   }
