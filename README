@@ -1,0 +1,5 @@
+This is the main Arduino code for SenseHCMUT
+
+More things will be added later.
+
+Ver 0.1: only DHT22 sensor supported, no wifi modem supported yet.
