@@ -77,12 +77,12 @@ static msg_t dhtSensorThread(void *arg) {
 static WORKING_AREA(waPrintThread, 100);
 
 #define NUM_SENSORS 2 
-static bool *sensorStatus[NUM_SENSORS] = {&dhtSensorStatus, 
-                                          &dhtSensorStatus };
-static float *sensorValue[NUM_SENSORS] = {&humidity,
-                                          &temperature };
-static char *sensorName[NUM_SENSORS] = { "humidity",
-                                         "temperature" };
+static const bool *sensorStatus[NUM_SENSORS] = { &dhtSensorStatus, 
+                                                 &dhtSensorStatus };
+static const float *sensorValue[NUM_SENSORS] = { &humidity,
+                                                 &temperature };
+static const char *sensorName[NUM_SENSORS] = { "humidity",
+                                               "temperature" };
 static msg_t printThread(void *arg) {
 
   // print sensor value every 5 seconds
@@ -91,7 +91,7 @@ static msg_t printThread(void *arg) {
     
     // check the error in sensors, signal if needed
     for (int ii = 0; ii < NUM_SENSORS; ii++) {
-      if (false == *sensorStatus[ii])
+      if (false == *sensorStatus[ii]) {
         ledOnTime = 100;
         ledOffTime = 900;
         continue;
