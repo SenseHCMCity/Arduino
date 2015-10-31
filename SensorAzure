@@ -207,9 +207,7 @@ void wifiSetup() {
   }
     
   Serial.println("Join accesspoint");
-  //wifiSerial.println("AT+CWJAP=\"TMLinksys\",\"MaiTraLe\"");
-  //wifiSerial.println("AT+CWJAP=\"Fablab Saigon\",\"011235813\"");
-  wifiSerial.println("AT+CWJAP=\"AndroidAPmai\",\"okayah1!\"");
+  wifiSerial.println("AT+CWJAP=\"Fablab Saigon\",\"011235813\"");
 
   //memset(buffer, 0, 80);
   while(1) {
