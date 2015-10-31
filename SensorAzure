@@ -231,11 +231,7 @@ void wifiSetup() {
 }
 
 void wifiLoop() {
-  //wifiSerial.println("AT+CIPSTART=\"UDP\",\"192.168.2.100\",5555"); //Home
-  //wifiSerial.println("AT+CIPSTART=\"UDP\",\"192.168.11.28\",5555"); //Fablab
-  //wifiSerial.println("AT+CIPSTART=\"TCP\",\"184.106.153.149\",80"); //ThingSpeak
-  //wifiSerial.println("AT+CIPSTART=\"TCP\",\"sense.saigonist.com\",5005"); //Tomo
-  wifiSerial.println("AT+CIPSTART=\"UDP\",\"104.42.3.121\",5005"); //Scott
+  wifiSerial.println("AT+CIPSTART=\"UDP\",\"sensehcmc.cloudapp.net\",5005");
   
   while(1) {
     if (readline(wifiSerial.read(), buffer, 80) > 0) {
