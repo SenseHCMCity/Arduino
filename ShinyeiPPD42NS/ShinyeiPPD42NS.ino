@@ -23,6 +23,8 @@ int value = 0;
 /**********************************************/
 /* Variable Definitions for PPD24NS
 /**********************************************/
+unsigned long sampletime_ms = 30000;
+
 // P1 for PM10 & P2 for PM25
 boolean valP1 = HIGH;
 boolean valP2 = HIGH;
@@ -31,12 +33,15 @@ unsigned long starttime;
 unsigned long durationP1;
 unsigned long durationP2;
 
+// flags to indicate we are seeing LOW values
 boolean trigP1 = false;
 boolean trigP2 = false;
+
+// store the time LOW reads started in these:
 unsigned long trigOnP1;
 unsigned long trigOnP2;
 
-unsigned long sampletime_ms = 30000;
+// accumulated time LOW values are occuring
 unsigned long lowpulseoccupancyP1 = 0;
 unsigned long lowpulseoccupancyP2 = 0;
 
@@ -44,7 +49,8 @@ float ratio = 0;
 float concPM25 = 0;
 float concPM10 = 0;
 
-//void sendConcentration(float valPM25, float valPM10);
+void sendConcentration(float valPM25, float valPM10);
+void connectWifi();
 
 /**********************************************/
 /* The Setup
@@ -52,8 +58,8 @@ float concPM10 = 0;
 void setup() {
   Serial.begin(9600); //Output to Serial at 9600 baud
   delay(10);
-  pinMode(4,INPUT); // Listen at the designated PIN
-  pinMode(5,INPUT); //Listen at the designated PIN
+  pinMode(4,INPUT); // Listen for PM10
+  pinMode(5,INPUT); // Listen for PM2.5
   starttime = millis(); // store the start time
   delay(10);
   connectWifi(); // Start ConnecWifi 
@@ -62,9 +68,11 @@ void setup() {
   Serial.println(ESP.getChipId());
 }
 
-/**********************************************/
-/* And action
-/**********************************************/
+/***********************************************************
+ * Loop for periods of sampletime_ms recording the duration
+ * of time each pin returns LOW. LOW value means there is
+ * enough dust / particulate matter to block the beam.
+ ***********************************************************/
 void loop() {
   String data;
 
@@ -72,12 +80,14 @@ void loop() {
   valP1 = digitalRead(4);
   valP2 = digitalRead(5);
   //Serial.print(valP1);
-  
+
+  // start seeing LOW values - capture the time is started
   if(valP1 == LOW && trigP1 == false){
     trigP1 = true;
     trigOnP1 = micros();
   }
-  
+
+  // LOW values finished - add the duration LOWs occured to the total
   if (valP1 == HIGH && trigP1 == true){
     durationP1 = micros() - trigOnP1;
     lowpulseoccupancyP1 = lowpulseoccupancyP1 + durationP1;
@@ -98,8 +108,10 @@ void loop() {
   // Checking if it is time to sample
   if ((millis()-starttime) > sampletime_ms)
   {
+    // see http://www.seeedstudio.com/wiki/Grove_-_Dust_sensor for details of this formula
     ratio = lowpulseoccupancyP1/(sampletime_ms*10.0);                 // int percentage 0 to 100
     concPM10 = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // spec sheet curve
+    
     // Begin printing
     Serial.print("LPO P10     : ");
     Serial.println(lowpulseoccupancyP1);
