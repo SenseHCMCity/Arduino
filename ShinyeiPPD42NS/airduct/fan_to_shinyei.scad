@@ -6,6 +6,8 @@
 sensorInX = 12.0;
 sensorInY = 3.5;
 sensorInZ = 7.0;
+sensorScrewHole = 4.5;
+sensorScrewToInDistance = 11.6 + (sensorScrewHole / 2);
 
 // input nozzle
 nozzleReduction = 0.1 * 2; 
@@ -14,16 +16,18 @@ nozzleY = sensorInY - nozzleReduction;
 nozzleZ = sensorInZ;
 nozzleWallThickness = 0.5;
 
-// fan
+// fan (based on sunon 40mm fan specs: http://www.sunon.com/tw/products/pdf/acfan.pdf)
 fanWidth = 40;
-fanHoleDiameter = 30;
+fanHoleDiameter = 37.5;
 fanPlateThickness = 5;
-fanPlateScrewHole = 5;
-fanPlateDistanceBetweenScrews = 30;
+fanPlateScrewHole = 4.3;
+fanPlateDistanceBetweenScrews = 32;
 
 // duct
-ductHeight = 20;
+ductHeight = 10;
 ductWallThickness = 1;
+ductBaseWidth = fanHoleDiameter + 2; // bit bigger then the hole
+ductScale = sensorInX / ductBaseWidth;
 
 module nozzle() {
     difference() { 
@@ -39,18 +43,14 @@ module nozzle() {
 }
 
 module duct() {
-    ductScale = sensorInX / fanWidth;
-    ductBaseWidth = fanWidth - 1; // bit smaller as it sits on the fanplate
     difference() {
         // duct outer (walls)
         linear_extrude(height = ductHeight, scale = ductScale)
-            square([ductBaseWidth, ductBaseWidth], 
-                    center=true);
+            circle(d=ductBaseWidth, center=true);
         // duct inner (air)
-        ductInnerWidth = fanWidth - (ductWallThickness * 2);
-        linear_extrude(height = ductHeight, scale = ductScale)
-            square([ductInnerWidth, ductInnerWidth],
-                    center=true);
+        ductInnerWidth = ductBaseWidth - (ductWallThickness * 2);
+        linear_extrude(height = ductHeight-0.1, scale = ductScale)
+            circle(d=ductInnerWidth, center=true);
     }
 }
 
@@ -96,30 +96,47 @@ module screw_hole(tX, tY, ds, t) {
     translate([tX,tY,-1]) cylinder(d=ds,h=t+2);
 }    
 
+module duct_to_sensor_connector() {
+    plateWidth = sensorScrewHole + 2;
+    plateHeight = 2;
+    rotate([180, 0, 180]) union() {
+        // connecting arm
+        translate([sensorScrewHole/2, -plateWidth/2, -plateHeight/2])
+            cube([2, plateWidth, 7]);
+        // screw plate
+        difference() {
+            cube([plateWidth, plateWidth, plateHeight], center=true);
+            cylinder(d=sensorScrewHole, h=plateHeight+0.2, center=true);
+        }
+    }
+}
+
+
 // Put together and add some holes
-nozzlePosition = fanPlateThickness+ductHeight+3;
-difference() {
+nozzlePositionZ = fanPlateThickness+ductHeight+3;
+    difference() {
     difference() {
         union() {
             fanplate(fanWidth, 
                     fanPlateDistanceBetweenScrews, 
                     fanPlateThickness, 
                     fanPlateScrewHole);
-            color("red") translate([0, 0, fanPlateThickness]) 
+            translate([0, 0, fanPlateThickness]) 
                 duct();
-            color("green") translate([0, 0, nozzlePosition]) 
+            translate([0, 0, nozzlePositionZ]) 
                 nozzle();
+            translate([sensorScrewToInDistance, 0,
+                      fanPlateThickness+ductHeight])
+                duct_to_sensor_connector();        
         }
         // fanplate hole breaking through the duct
-        translate([0, 0, -1]) 
-            cylinder(d=fanHoleDiameter, h=fanPlateThickness+2);
+        translate([0, 0, -0.1]) 
+            cylinder(d=fanHoleDiameter, h=fanPlateThickness+0.2);
     }
     // punch a hole where the nozzle and duct join
-    translate([0, 0, nozzlePosition-2])
+    translate([0, 0, nozzlePositionZ-2])
         cube([nozzleX - (nozzleWallThickness * 2), 
               nozzleY - (nozzleWallThickness * 2), 
               3], 
               center=true);
 }
-
-
