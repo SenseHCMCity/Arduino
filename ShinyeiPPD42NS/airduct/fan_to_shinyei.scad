@@ -24,22 +24,23 @@ fanPlateScrewHole = 4.3;
 fanPlateDistanceBetweenScrews = 32;
 
 // duct
-ductHeight = 10;
-ductWallThickness = 1;
+ductHeight = 15;
+ductWallThickness = 3;
+ductTopThickness = 2;
 ductBaseWidth = fanHoleDiameter + 2; // bit bigger then the hole
 ductScale = sensorInX / ductBaseWidth;
 
-module nozzle() {
-    difference() { 
-      // nozzle outer (walls)
-      cube([nozzleX, nozzleY, nozzleZ], 
-            center=true);
-      // nozzle inner (air)
-      cube([nozzleX - (nozzleWallThickness * 2), 
-            nozzleY - (nozzleWallThickness * 2), 
-            nozzleZ + 1], 
-            center=true);
-    }
+// nozzle outer (walls)
+module nozzle_outer() {
+    cube([nozzleX, nozzleY, nozzleZ], center=true);
+}
+// nozzle inner (air)
+module nozzle_inner() {
+    translate([0, 0, -(ductTopThickness + 1)])
+        cube([nozzleX - (nozzleWallThickness * 2), 
+              nozzleY - (nozzleWallThickness * 2), 
+              nozzleZ + duckTopThickness + 3],  // enough to punch hole through top and bottom 
+              center=true);
 }
 
 module duct() {
@@ -49,7 +50,7 @@ module duct() {
             circle(d=ductBaseWidth, center=true);
         // duct inner (air)
         ductInnerWidth = ductBaseWidth - (ductWallThickness * 2);
-        linear_extrude(height = ductHeight-0.1, scale = ductScale)
+        linear_extrude(height = ductHeight-ductTopThickness, scale = ductScale)
             circle(d=ductInnerWidth, center=true);
     }
 }
@@ -114,20 +115,23 @@ module duct_to_sensor_connector() {
 
 // Put together and add some holes
 nozzlePositionZ = fanPlateThickness+ductHeight+3;
+difference() {
     difference() {
-    difference() {
-        union() {
-            fanplate(fanWidth, 
-                    fanPlateDistanceBetweenScrews, 
-                    fanPlateThickness, 
-                    fanPlateScrewHole);
-            translate([0, 0, fanPlateThickness]) 
-                duct();
-            translate([0, 0, nozzlePositionZ]) 
-                nozzle();
-            translate([sensorScrewToInDistance, 0,
-                      fanPlateThickness+ductHeight])
-                duct_to_sensor_connector();        
+        difference() {
+            union() {
+                fanplate(fanWidth, 
+                        fanPlateDistanceBetweenScrews, 
+                        fanPlateThickness, 
+                        fanPlateScrewHole);
+                translate([0, 0, fanPlateThickness]) 
+                    duct();
+                translate([0, 0, nozzlePositionZ]) 
+                    nozzle_outer();
+                translate([sensorScrewToInDistance, 0,
+                          fanPlateThickness+ductHeight])
+                    duct_to_sensor_connector();        
+            }
+            nozzle_inner();
         }
         // fanplate hole breaking through the duct
         translate([0, 0, -0.1]) 
