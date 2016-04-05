@@ -14,6 +14,7 @@
  * pm10 value: pm10(ug/m3) = ((pm10 highbyte * 256) + pm10 lowbyte) / 10
  */
 #include <SoftwareSerial.h>
+#include <Time.h>
 
 // use software serial to capture sensor data
 const int RX_PIN = 8; 
@@ -64,6 +65,9 @@ void ProcessSerialData()
             
             float finalPm2_5 = pm2_5 / 10;
             float finalPm10 = pm10 / 10;
+
+            Serial.print(now());
+            Serial.print(",");
             Serial.print(finalPm2_5);
             Serial.print(",");
             Serial.println(finalPm10);
