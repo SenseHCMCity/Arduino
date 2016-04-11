@@ -7,10 +7,16 @@ sensorInX = 12.0;
 sensorInY = 3.5;
 sensorInZ = 7.0;
 sensorScrewHole = 4.5;
-sensorScrewToInDistance = 11.6 + (sensorScrewHole / 2);
+sensorScrewSideToInDistance = 11.6;
+sensorScrewToInDistance = sensorScrewSideToInDistance + (sensorScrewHole / 2); // to screw centre
+
+// sensorBodyHeight is the top of black plastic to top of the board it sits on.
+// spec says 15.5 with +0.5/-0.3. measuring the fablab saigon one it is 15.5.
+sensorBodyHeight = 15.5; 
+sensorInToScrewHole = sensorBodyHeight - 1.0; // slightly lower then the body
 
 // input nozzle
-nozzleReduction = 0.1 * 2; 
+nozzleReduction = 0.1 * 2; // allows nozzle to insert into sensorIn hole
 nozzleX = sensorInX - nozzleReduction;
 nozzleY = sensorInY - nozzleReduction;
 nozzleZ = sensorInZ;
@@ -30,17 +36,26 @@ ductTopThickness = 2;
 ductBaseWidth = fanHoleDiameter + 2; // bit bigger then the hole
 ductScale = sensorInX / ductBaseWidth;
 
+// connector and screw plate
+connectorArmDuctTopToDuctBody = 5; // to where the arm touches the body (TODO: calculate this)
+connectorArmLength = sensorInToScrewHole + connectorArmDuctTopToDuctBody;
+connectorArmWidth = 2;
+connectorArmZOffset = connectorArmLength + // raise it the height of itself as it's inverted
+                         ductHeight - connectorArmDuctTopToDuctBody; // raise to where it meets the duct wall
+screwPlateWidth = sensorScrewHole + 2;
+screwPlateHeight = 2;
+screwPlateYOffset = sensorInY / 2; // screw centre aligns with top of the in hole
+
 // nozzle outer (walls)
 module nozzle_outer() {
     cube([nozzleX, nozzleY, nozzleZ], center=true);
 }
 // nozzle inner (air)
 module nozzle_inner() {
-    translate([0, 0, -(ductTopThickness + 1)])
-        cube([nozzleX - (nozzleWallThickness * 2), 
-              nozzleY - (nozzleWallThickness * 2), 
-              nozzleZ + duckTopThickness + 3],  // enough to punch hole through top and bottom 
-              center=true);
+    cube([nozzleX - (nozzleWallThickness * 2), 
+          nozzleY - (nozzleWallThickness * 2), 
+          nozzleZ + ductTopThickness + 2],  // enough to punch hole through top and bottom 
+          center=true);
 }
 
 module duct() {
@@ -95,19 +110,17 @@ module fanplate(d,ls,t,ds)
 }
 module screw_hole(tX, tY, ds, t) {
     translate([tX,tY,-1]) cylinder(d=ds,h=t+2);
-}    
+}
 
 module duct_to_sensor_connector() {
-    plateWidth = sensorScrewHole + 2;
-    plateHeight = 2;
     rotate([180, 0, 180]) union() {
         // connecting arm
-        translate([sensorScrewHole/2, -plateWidth/2, -plateHeight/2])
-            cube([2, plateWidth, 7]);
+        translate([sensorScrewHole/2, -screwPlateWidth/2, -screwPlateHeight/2])
+            cube([connectorArmWidth, screwPlateWidth, connectorArmLength]);
         // screw plate
         difference() {
-            cube([plateWidth, plateWidth, plateHeight], center=true);
-            cylinder(d=sensorScrewHole, h=plateHeight+0.2, center=true);
+            cube([screwPlateWidth, screwPlateWidth, screwPlateHeight], center=true);
+            cylinder(d=sensorScrewHole, h=screwPlateHeight+0.2, center=true);
         }
     }
 }
@@ -127,11 +140,13 @@ difference() {
                     duct();
                 translate([0, 0, nozzlePositionZ]) 
                     nozzle_outer();
-                translate([sensorScrewToInDistance, 0,
-                          fanPlateThickness+ductHeight])
+                translate([sensorScrewToInDistance,
+                          screwPlateYOffset,
+                          connectorArmZOffset])
                     duct_to_sensor_connector();        
             }
-            nozzle_inner();
+            translate([0, 0, nozzlePositionZ]) 
+                nozzle_inner();
         }
         // fanplate hole breaking through the duct
         translate([0, 0, -0.1]) 
