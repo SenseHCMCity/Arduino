@@ -1,11 +1,14 @@
 //
 // An air duct to pump air through the Shinyei PPD42NS PM sensor.
 //
+// Fan size is variable (see fanWidth). When changing fanWidth check also connectorArmPart2Length 
+// and ensure the arm extends down to the duct body enough.
 
 // sensor input hole (see http://sca-shinyei.com/pdf/PPD42NS.pdf)
 sensorInX = 12.0;
 sensorInY = 3.5;
 sensorInZ = 7.0;
+
 sensorScrewHole = 4.5;
 sensorScrewSideToInDistance = 11.6;
 sensorScrewToInDistance = sensorScrewSideToInDistance + (sensorScrewHole / 2); // to screw centre
@@ -36,15 +39,25 @@ ductTopThickness = 2;
 ductBaseWidth = fanHoleDiameter + 2; // bit bigger then the hole
 ductScale = sensorInX / ductBaseWidth;
 
-// connector and screw plate
-connectorArmDuctTopToDuctBody = 5; // to where the arm touches the body (TODO: calculate this)
-connectorArmLength = sensorInToScrewHole + connectorArmDuctTopToDuctBody;
-connectorArmWidth = 2;
-connectorArmZOffset = connectorArmLength + // raise it the height of itself as it's inverted
-                         ductHeight - connectorArmDuctTopToDuctBody; // raise to where it meets the duct wall
+// screw plate and connector
 screwPlateWidth = sensorScrewHole + 2;
 screwPlateHeight = 2;
 screwPlateYOffset = sensorInY / 2; // screw centre aligns with top of the in hole
+
+// connector arm is in 2 parts:
+//   part1: arm with screw plate is Z positioned flush on the sensor board. 
+//          the length extends down to the same Z as the top of the duct
+//   part2: extends down from the top of the duct to inside the duct body so it attaches
+connectorArmWidth = 2;
+connectorArmZPosition = fanPlateThickness 
+                            + ductHeight 
+                            + sensorBodyHeight
+                            - screwPlateHeight / 2; // because plate is centered on Z
+connectorArmPart1Length = sensorBodyHeight;
+
+// NOTE: part2 length will need to be changed manually if the fan size or duct size changes.
+//         ?? maybe a way to calculate this based on fan size, duct slope, etc. ??
+connectorArmPart2Length = 10;
 
 // nozzle outer (walls)
 module nozzle_outer() {
@@ -114,9 +127,12 @@ module screw_hole(tX, tY, ds, t) {
 
 module duct_to_sensor_connector() {
     rotate([180, 0, 180]) union() {
-        // connecting arm
+        // connecting arm 1
         translate([sensorScrewHole/2, -screwPlateWidth/2, -screwPlateHeight/2])
-            cube([connectorArmWidth, screwPlateWidth, connectorArmLength]);
+            cube([connectorArmWidth, screwPlateWidth, connectorArmPart1Length]);
+        // connecting arm 2
+        translate([sensorScrewHole/2, -screwPlateWidth/2, -screwPlateHeight/2 + connectorArmPart1Length])
+            cube([connectorArmWidth, screwPlateWidth, connectorArmPart2Length]);
         // screw plate
         difference() {
             cube([screwPlateWidth, screwPlateWidth, screwPlateHeight], center=true);
@@ -142,7 +158,7 @@ difference() {
                     nozzle_outer();
                 translate([sensorScrewToInDistance,
                           screwPlateYOffset,
-                          connectorArmZOffset])
+                          connectorArmZPosition])
                     duct_to_sensor_connector();        
             }
             translate([0, 0, nozzlePositionZ]) 
